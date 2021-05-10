@@ -1,0 +1,13 @@
+version: '2'
+services:
+  mesadas-server:
+    build: .
+    volumes:
+      - ./:/app    
+    ports:
+      - "${PORT}:8000"            
+    command: "yarn start:dev"
+    env_file:
+      - .env    
+    tty: true
+    stdin_open: true
