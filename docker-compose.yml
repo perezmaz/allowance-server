@@ -6,7 +6,7 @@ services:
       - ./:/app    
     ports:
       - "${PORT}:8000"            
-    command: "yarn start:dev"
+    command: "yarn start"
     env_file:
       - .env    
     tty: true
