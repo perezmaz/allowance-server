@@ -15,6 +15,10 @@ const createAccessToken = user => {
     parentId: user.role === 'child'
       ? user.child.parent._id
       : user.id,
+    avatar: user.avatar,
+    age: user.role === 'parent'
+      ? 'N/A'
+      : user.child.age || 'N/A',
     createdAt: moment().unix(),
     expiredAt: moment().add(30, 'minutes').unix(),
   };

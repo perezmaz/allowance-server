@@ -60,13 +60,13 @@ const create = async (data, idParent) => {
 
     const newActivity = new Activity(activityData);
 
-    const result = await newActivity.save()
+    await newActivity.save()
       .then(saved => saved)
       .catch(error => {
         throw new CustomError(500, -1, error.message);
       });
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -202,7 +202,7 @@ const update = async (id, data, idParent) => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -229,7 +229,7 @@ const remove = async (id, idParent) => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,

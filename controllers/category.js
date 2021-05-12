@@ -17,7 +17,7 @@ const create = async (data, idParent) => {
 
     const category = new Category(categoryData);
 
-    const result = await category.save()
+    await category.save()
       .then(saved => saved)
       .catch(error => {
         let code = -1;
@@ -29,7 +29,7 @@ const create = async (data, idParent) => {
         throw new CustomError(status, code, error.message);
       });
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -110,7 +110,7 @@ const update = async (id, data, idParent) => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -137,7 +137,7 @@ const remove = async (id, idParent) => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,

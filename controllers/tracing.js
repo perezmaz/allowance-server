@@ -48,6 +48,7 @@ const create = async (data, idParent, token) => {
         _id: findedChild._id,
         name: findedChild.child.name,
         age: findedChild.child.age,
+        avatar: findedChild.avatar,
       },
       parent: {
         _id: idParent,
@@ -94,7 +95,7 @@ const create = async (data, idParent, token) => {
     };
     await createNotification(token, notificationData);
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -178,7 +179,7 @@ const update = async (id, data, user, token) => {
     };
     await createNotification(token, notificationData);
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -205,7 +206,7 @@ const remove = async (id, idParent) => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,

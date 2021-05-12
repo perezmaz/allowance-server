@@ -9,6 +9,9 @@ const allowanceSchema = mongoose.Schema({
   parent: {
     _id: id,
   },
+  child: {
+    _id: id,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Allowance', allowanceSchema);

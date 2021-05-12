@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle */
+const fsPromises = require('fs').promises;
 const { hash, compare } = require('bcrypt-promise');
 const moment = require('moment');
 const mjml2html = require('mjml');
@@ -12,7 +13,7 @@ const {
 } = require('../utilities');
 const forgotTemplate = require('../templates/forgot.js');
 const activateTemplate = require('../templates/activate.js');
-const { emails } = require('../config');
+const { emails, api } = require('../config');
 
 const register = async (data, role) => {
   try {
@@ -45,9 +46,9 @@ const register = async (data, role) => {
         throw new CustomError(status, code, error.message);
       });
 
-    const token = createActivateToken(result);
+    const activateToken = createActivateToken(result);
 
-    const message = activateTemplate.replace('{{name}}', username).replace('{{url}}', `${emails.activate.link}/${token}`);
+    const message = activateTemplate.replace('{{name}}', username).replace('{{url}}', `${emails.activate.link}/${activateToken}`);
     const { html } = mjml2html(message);
 
     const request = {
@@ -58,7 +59,7 @@ const register = async (data, role) => {
 
     await sendMail(request);
 
-    return defaultResult(200, result);
+    return defaultResult(200, { activateToken });
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -144,26 +145,28 @@ const update = async (id, data) => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    const same = await compare(data.currentPassword, findedUser.password)
-      .then(compareResult => compareResult)
-      .catch(error => {
-        throw new CustomError(-1, error.message);
-      });
-
-    if (!same) {
-      throw new CustomError(200, -3, 'Invalid current password');
-    }
-
     const userData = {
       email: data.email,
       username: data.username,
     };
 
-    userData.password = await hash(data.newPassword, 0)
-      .then(hashResult => hashResult)
-      .catch(error => {
-        throw new CustomError(500, -1, error.message);
-      });
+    if (data.currentPassword) {
+      const same = await compare(data.currentPassword, findedUser.password)
+        .then(compareResult => compareResult)
+        .catch(error => {
+          throw new CustomError(-1, error.message);
+        });
+
+      if (!same) {
+        throw new CustomError(200, -3, 'Invalid current password');
+      }
+
+      userData.password = await hash(data.newPassword, 0)
+        .then(hashResult => hashResult)
+        .catch(error => {
+          throw new CustomError(500, -1, error.message);
+        });
+    }
 
     switch (findedUser.role) {
       case 'parent':
@@ -196,7 +199,9 @@ const update = async (id, data) => {
         throw new CustomError(status, code, error.message);
       });
 
-    return defaultResult(200, result);
+    const accessToken = createAccessToken(result);
+
+    return defaultResult(200, { accessToken });
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -247,9 +252,9 @@ const forgot = async data => {
       message: html,
     };
 
-    const result = await sendMail(request);
+    await sendMail(request);
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -275,7 +280,67 @@ const activate = async data => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    return defaultResult(200, result);
+    return defaultResult(200);
+  } catch (error) {
+    return defaultError(
+      error.status ? error.status : 500,
+      error.code ? error.code : -1,
+      error.message,
+    );
+  }
+};
+
+const uploadAvatar = async (id, data) => {
+  try {
+    const findedUser = await User.findById(id)
+      .then(saved => saved)
+      .catch(error => {
+        throw new CustomError(500, -1, error.message);
+      });
+
+    if (!findedUser) {
+      throw new CustomError(404, -2, 'Record not found');
+    }
+
+    const filePath = data.avatar.path;
+    const fileName = filePath.split('/')[2];
+    const fileExtension = fileName.split('.')[1];
+
+    if (!['jpeg', 'png', 'jpg'].includes(fileExtension)) {
+      throw new CustomError(400, -3, 'Extension not valid');
+    }
+
+    fsPromises.rename(filePath, `./public/avatar/${findedUser._id}.${fileExtension}`);
+
+    await User.findByIdAndUpdate(id, { avatar: `${findedUser._id}.${fileExtension}` })
+      .then(saved => saved)
+      .catch(error => {
+        throw new CustomError(500, -1, error.message);
+      });
+
+    return defaultResult(200, { fileName });
+  } catch (error) {
+    return defaultError(
+      error.status ? error.status : 500,
+      error.code ? error.code : -1,
+      error.message,
+    );
+  }
+};
+
+const getAvatar = async name => {
+  try {
+    const filePath = `./public/avatar/${name}`;
+
+    await fsPromises.stat(filePath)
+      .then(file => file)
+      .catch(error => {
+        throw new CustomError(500, -1, error.message);
+      });
+
+    return defaultResult(200, {
+      file: `${api.HOST}:${api.PORT}/avatar/${name}`,
+    });
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -292,4 +357,6 @@ module.exports = {
   update,
   forgot,
   activate,
+  uploadAvatar,
+  getAvatar,
 };

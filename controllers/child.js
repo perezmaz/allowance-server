@@ -1,5 +1,11 @@
 const { hash } = require('bcrypt-promise');
+const moment = require('moment');
+const mjml2html = require('mjml');
+const { createActivateToken } = require('../services/jwt');
 const User = require('../models/user');
+const { sendMail } = require('../services/notification');
+const newChildTemplate = require('../templates/child.js');
+const { emails } = require('../config');
 
 const {
   defaultError,
@@ -13,7 +19,7 @@ const create = async (data, idParent) => {
       username: data.username,
       email: data.email,
       role: 'child',
-      active: true,
+      active: false,
       child: {
         name: data.name,
         age: data.age,
@@ -23,7 +29,15 @@ const create = async (data, idParent) => {
       },
     };
 
-    childData.password = await hash(data.username, 0)
+    let newPassword = await hash(moment().unix().toString(), 0)
+      .then(hashResult => hashResult)
+      .catch(error => {
+        throw new CustomError(500, -1, error.message);
+      });
+
+    newPassword = newPassword.substring(0, 8);
+
+    childData.password = await hash(newPassword, 0)
       .then(hashResult => hashResult)
       .catch(error => {
         throw new CustomError(500, -1, error.message);
@@ -47,7 +61,24 @@ const create = async (data, idParent) => {
         throw new CustomError(status, code, error.message);
       });
 
-    return defaultResult(200, result);
+    const activateToken = createActivateToken(result);
+
+    const message = newChildTemplate
+      .replace('{{user}}', childData.username)
+      .replace('{{password}}', newPassword)
+      .replace('{{name}}', childData.child.name)
+      .replace('{{url}}', `${emails.activate.link}/${activateToken}`);
+    const { html } = mjml2html(message);
+
+    const request = {
+      subject: emails.activate.subject,
+      emailTo: childData.email,
+      message: html,
+    };
+
+    await sendMail(request);
+
+    return defaultResult(200, { activateToken });
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -147,7 +178,7 @@ const update = async (id, data, idParent) => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    return defaultResult(200, result);
+    return defaultResult(200, { childData });
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -174,7 +205,7 @@ const remove = async (id, idParent) => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,

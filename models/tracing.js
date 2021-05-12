@@ -25,6 +25,7 @@ const tracingSchema = mongoose.Schema({
     _id: id,
     name: String,
     age: Number,
+    avatar: String,
   },
   parent: {
     _id: id,

@@ -22,10 +22,10 @@ const userValidations = (validationCase, data) => {
       schema = joi.object().keys({
         username: joi.string().required().min(3).max(20),
         email: joi.string().required().email(),
-        currentPassword: joi.string().required().min(8).max(20),
-        newPassword: joi.string().required().min(8).max(20),
-        confirmPassword: joi.string().min(8).max(20).valid(joi.ref('newPassword'))
-          .required(),
+        currentPassword: joi.string().min(8).max(20).allow(null, ''),
+        newPassword: joi.string().min(8).max(20).allow(null, ''),
+        confirmPassword: joi.string().min(8).max(20).allow(null, '')
+          .valid(joi.ref('newPassword')),
         name: joi.string().required().min(3).max(20),
         age: joi.number().min(5).max(18),
       });

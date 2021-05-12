@@ -14,6 +14,7 @@ const {
 const { api } = require('./config');
 
 const server = express();
+server.use(express.static('public'));
 
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({ extended: false }));

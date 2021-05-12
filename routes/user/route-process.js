@@ -1,4 +1,13 @@
-const { register, login, edit, update, forgot, activate } = require('../../controllers/user');
+const {
+  register,
+  login,
+  edit,
+  update,
+  forgot,
+  activate,
+  uploadAvatar,
+  getAvatar,
+} = require('../../controllers/user');
 const { userValidations } = require('../../validations');
 const { sendValidationError } = require('../../utilities');
 
@@ -66,6 +75,28 @@ const routeActivate = async (req, res) => {
   }
 };
 
+const routeUploadAvatar = async (req, res) => {
+  if (req.files) {
+    const data = req.files;
+    const { id } = req.params;
+
+    const response = await uploadAvatar(id, data);
+    res.status(response.status).send(response);
+  } else {
+    res.status(400).send({
+      code: -1,
+      message: 'file required',
+    });
+  }
+};
+
+const routeGetAvatar = async (req, res) => {
+  const { fileName } = req.params;
+
+  const response = await getAvatar(fileName);
+  res.status(response.status).send(response);
+};
+
 module.exports = {
   routeRegister,
   routeLogin,
@@ -73,4 +104,6 @@ module.exports = {
   routeUpdate,
   routeForgot,
   routeActivate,
+  routeUploadAvatar,
+  routeGetAvatar,
 };

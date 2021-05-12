@@ -24,6 +24,7 @@ const userSchema = mongoose.Schema({
   password: String,
   role: String,
   active: Boolean,
+  avatar: String,
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

@@ -1,15 +1,32 @@
 /* eslint-disable no-underscore-dangle */
 const Allowance = require('../models/allowance');
+const Child = require('../models/user');
+
 const {
   defaultError,
   defaultResult,
   CustomError,
 } = require('../utilities');
 
+const findChild = child => (
+  Child.findById(child)
+    .then(finded => finded)
+);
+
 const create = async (data, idParent) => {
   try {
+    const { child } = data;
+    const findedChild = await findChild(child);
+
+    if (!findedChild) {
+      throw new CustomError(402, -1, 'Child not found');
+    }
+
     const allowanceData = {
       ...data,
+      child: {
+        _id: child,
+      },
       parent: {
         _id: idParent,
       },
@@ -17,13 +34,13 @@ const create = async (data, idParent) => {
 
     const allowance = new Allowance(allowanceData);
 
-    const result = await allowance.save()
+    await allowance.save()
       .then(saved => saved)
       .catch(error => {
         throw new CustomError(500, -1, error.message);
       });
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -72,7 +89,22 @@ const list = async (data, idParent) => {
         throw new CustomError(500, -1, error.message);
       });
 
-    return defaultResult(200, result);
+    const resultWithRelation = await Promise.all(result.map(async record => {
+      const findedChild = await findChild(record.child._id);
+      return (
+        {
+          _id: record._id,
+          amount: record.amount,
+          from: record.from,
+          to: record.to,
+          child: {
+            name: findedChild ? findedChild.child.name : '',
+          },
+        }
+      );
+    }));
+
+    return defaultResult(200, resultWithRelation);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -84,11 +116,26 @@ const list = async (data, idParent) => {
 
 const update = async (id, data, idParent) => {
   try {
+    const { child } = data;
+    const findedChild = await findChild(child);
+
+    if (!findedChild) {
+      throw new CustomError(402, -1, 'Child not found');
+    }
+
     const search = {
       _id: id,
       'parent._id': idParent,
     };
-    const result = await Allowance.findOneAndUpdate(search, data, { new: true })
+
+    const allowanceData = {
+      ...data,
+      child: {
+        _id: child,
+      },
+    };
+
+    const result = await Allowance.findOneAndUpdate(search, allowanceData, { new: true })
       .then(saved => saved)
       .catch(error => {
         throw new CustomError(500, -1, error.message);
@@ -98,7 +145,7 @@ const update = async (id, data, idParent) => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -125,7 +172,7 @@ const remove = async (id, idParent) => {
       throw new CustomError(404, -2, 'Record not found');
     }
 
-    return defaultResult(200, result);
+    return defaultResult(200);
   } catch (error) {
     return defaultError(
       error.status ? error.status : 500,
@@ -137,7 +184,7 @@ const remove = async (id, idParent) => {
 
 const findAmount = async (data, idParent) => {
   try {
-    const { date } = data;
+    const { date, child } = data;
 
     const search = {
       'parent._id': idParent,
@@ -147,6 +194,7 @@ const findAmount = async (data, idParent) => {
       to: {
         $gte: date,
       },
+      'child._id': child,
     };
 
     const result = await Allowance.findOne(search)
