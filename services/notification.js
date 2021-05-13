@@ -26,7 +26,18 @@ const sendMail = async data => {
   return result;
 };
 
+const sendMessage = async (token, data) => {
+  notificationApi.defaults.headers.Authorization = token;
+
+  const result = await notificationApi.post('/sendMessage', data)
+    .then(response => response.data)
+    .catch(error => error.response.data);
+
+  return result;
+};
+
 module.exports = {
   createNotification,
   sendMail,
+  sendMessage,
 };

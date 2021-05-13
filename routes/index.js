@@ -5,6 +5,8 @@ const activityRoutes = require('./activity');
 const childRoutes = require('./child');
 const allowanceRoutes = require('./allowance');
 const tracingRoutes = require('./tracing');
+const noteRoutes = require('./note');
+const messageRoutes = require('./message');
 
 module.exports = {
   userRoutes,
@@ -14,4 +16,6 @@ module.exports = {
   childRoutes,
   allowanceRoutes,
   tracingRoutes,
+  noteRoutes,
+  messageRoutes,
 };

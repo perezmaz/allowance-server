@@ -10,6 +10,8 @@ const {
   childRoutes,
   allowanceRoutes,
   tracingRoutes,
+  noteRoutes,
+  messageRoutes,
 } = require('./routes');
 const { api } = require('./config');
 
@@ -34,5 +36,7 @@ server.use(`/api/${api.VERSION}`, activityRoutes);
 server.use(`/api/${api.VERSION}`, childRoutes);
 server.use(`/api/${api.VERSION}`, allowanceRoutes);
 server.use(`/api/${api.VERSION}`, tracingRoutes);
+server.use(`/api/${api.VERSION}`, noteRoutes);
+server.use(`/api/${api.VERSION}`, messageRoutes);
 
 module.exports = server;

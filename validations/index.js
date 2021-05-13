@@ -5,6 +5,8 @@ const activityValidations = require('./activity');
 const childValidations = require('./child');
 const allowanceValidations = require('./allowance');
 const tracingValidations = require('./tracing');
+const noteValidations = require('./note');
+const messageValidations = require('./message');
 
 module.exports = {
   userValidations,
@@ -14,4 +16,6 @@ module.exports = {
   childValidations,
   allowanceValidations,
   tracingValidations,
+  noteValidations,
+  messageValidations,
 };
