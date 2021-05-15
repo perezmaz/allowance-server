@@ -6,7 +6,6 @@ const { jwtToken } = require('../config');
 const createAccessToken = user => {
   const payload = {
     _id: user.id,
-    username: user.username,
     email: user.email,
     role: user.role,
     name: user.role === 'parent'
@@ -19,6 +18,7 @@ const createAccessToken = user => {
     age: user.role === 'parent'
       ? 'N/A'
       : user.child.age || 'N/A',
+    tutorial: user.tutorial,
     createdAt: moment().unix(),
     expiredAt: moment().add(30, 'minutes').unix(),
   };
@@ -37,7 +37,6 @@ const createRefreshToken = user => {
 
 const createActivateToken = user => {
   const payload = {
-    username: user.username,
     email: user.email,
     createdAt: moment().unix(),
   };

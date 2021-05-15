@@ -7,7 +7,6 @@ const childValidations = (validationCase, data) => {
     case 'update':
       schema = joi.object().keys({
         email: joi.string().required().email(),
-        username: joi.string().required().min(3).max(20),
         name: joi.string().required().min(3).max(20),
         age: joi.number().required().min(5).max(18),
       });

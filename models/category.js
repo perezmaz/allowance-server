@@ -3,10 +3,7 @@ const mongoose = require('mongoose');
 const id = mongoose.Schema.ObjectId;
 
 const categorySchema = mongoose.Schema({
-  category: {
-    type: String,
-    unique: true,
-  },
+  category: String,
   active: Boolean,
   parent: {
     _id: id,

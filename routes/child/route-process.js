@@ -7,6 +7,7 @@ const {
   list,
   update,
   remove,
+  resend,
 } = require('../../controllers/child');
 const { decodeToken } = require('../../services/jwt');
 
@@ -66,10 +67,20 @@ const routeDelete = async (req, res) => {
   res.status(response.status).send(response);
 };
 
+const routeResend = async (req, res) => {
+  const { id } = req.params;
+  const token = req.headers.authorization.replace(/['"]+/g, '');
+  const parent = decodeToken(token);
+
+  const response = await resend(id, parent._id);
+  res.status(response.status).send(response);
+};
+
 module.exports = {
   routeCreate,
   routeEdit,
   routeList,
   routeUpdate,
   routeDelete,
+  routeResend,
 };

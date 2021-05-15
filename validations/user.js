@@ -6,7 +6,7 @@ const userValidations = (validationCase, data) => {
     case 'register':
       schema = joi.object().keys({
         email: joi.string().required().email(),
-        username: joi.string().required().min(3).max(20),
+        name: joi.string().required().min(3).max(20),
         password: joi.string().required().min(8).max(20),
         confirmPassword: joi.string().min(8).max(20).valid(joi.ref('password'))
           .required(),
@@ -14,13 +14,12 @@ const userValidations = (validationCase, data) => {
       break;
     case 'login':
       schema = joi.object().keys({
-        username: joi.string().required().min(3).max(20),
+        email: joi.string().required().email(),
         password: joi.string().required().min(8).max(20),
       });
       break;
     case 'update':
       schema = joi.object().keys({
-        username: joi.string().required().min(3).max(20),
         email: joi.string().required().email(),
         currentPassword: joi.string().min(8).max(20).allow(null, ''),
         newPassword: joi.string().min(8).max(20).allow(null, ''),

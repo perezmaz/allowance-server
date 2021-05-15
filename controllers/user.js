@@ -18,12 +18,14 @@ const { emails, api } = require('../config');
 const register = async (data, role) => {
   try {
     const user = new User();
-    const { username, email, password } = data;
+    const { name, email, password } = data;
 
-    user.username = username;
     user.email = email;
     user.role = role;
     user.active = false;
+    user.parent = {
+      name,
+    };
     user.password = await hash(password, 0)
       .then(hashResult => hashResult)
       .catch(error => {
@@ -35,10 +37,6 @@ const register = async (data, role) => {
       .catch(error => {
         let code = -1;
         let status = 500;
-        if (error.keyValue.username) {
-          code = -2;
-          status = 200;
-        }
         if (error.keyValue.email) {
           code = -3;
           status = 200;
@@ -48,7 +46,7 @@ const register = async (data, role) => {
 
     const activateToken = createActivateToken(result);
 
-    const message = activateTemplate.replace('{{name}}', username).replace('{{url}}', `${emails.activate.link}/${activateToken}`);
+    const message = activateTemplate.replace('{{name}}', name).replace('{{url}}', `${emails.activate.link}/${activateToken}`);
     const { html } = mjml2html(message);
 
     const request = {
@@ -71,8 +69,8 @@ const register = async (data, role) => {
 
 const login = async data => {
   try {
-    const { username, password } = data;
-    const user = await User.findOne({ username })
+    const { email, password } = data;
+    const user = await User.findOne({ email })
       .then(record => record)
       .catch(error => {
         throw new CustomError(500, -1, error.message);
@@ -147,7 +145,6 @@ const update = async (id, data) => {
 
     const userData = {
       email: data.email,
-      username: data.username,
     };
 
     if (data.currentPassword) {
@@ -176,6 +173,9 @@ const update = async (id, data) => {
         break;
       case 'child':
         userData.child = {
+          parent: {
+            _id: findedUser.child.parent._id,
+          },
           name: data.name,
           age: data.age,
         };
@@ -188,10 +188,6 @@ const update = async (id, data) => {
       .catch(error => {
         let code = -1;
         let status = 500;
-        if (error.keyValue.username) {
-          code = -4;
-          status = 200;
-        }
         if (error.keyValue.email) {
           code = -5;
           status = 200;
@@ -240,8 +236,8 @@ const forgot = async data => {
     }
 
     const name = findedUser.role === 'parent'
-      ? findedUser.parent.name || findedUser.username
-      : findedUser.child.name || findedUser.username;
+      ? findedUser.parent.name || findedUser.email
+      : findedUser.child.name || findedUser.email;
 
     const message = forgotTemplate.replace('{{name}}', name).replace('{{password}}', newPassword);
     const { html } = mjml2html(message);

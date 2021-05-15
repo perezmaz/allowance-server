@@ -13,13 +13,60 @@ const {
   CustomError,
 } = require('../utilities');
 
+const createPassword = async () => {
+  try {
+    let password = await hash(moment().unix().toString(), 0)
+      .then(hashResult => hashResult)
+      .catch(error => {
+        throw new CustomError(500, -1, error.message);
+      });
+
+    password = password.substring(0, 8);
+
+    const passwordHash = await hash(password, 0)
+      .then(hashResult => hashResult)
+      .catch(error => {
+        throw new CustomError(500, -1, error.message);
+      });
+
+    return {
+      passwordHash,
+      password,
+    };
+  } catch (error) {
+    throw new CustomError(error.status, error.code, error.message);
+  }
+};
+
+const sendActivationEmail = async (user, password) => {
+  const activateToken = createActivateToken(user);
+
+  const message = newChildTemplate
+    .replace('{{password}}', password)
+    .replace('{{name}}', user.child.name)
+    .replace('{{url}}', `${emails.activate.link}/${activateToken}`);
+  const { html } = mjml2html(message);
+
+  const request = {
+    subject: emails.activate.subject,
+    emailTo: user.email,
+    message: html,
+  };
+
+  await sendMail(request);
+
+  return activateToken;
+};
+
 const create = async (data, idParent) => {
   try {
+    const { password, passwordHash } = await createPassword();
+
     const childData = {
-      username: data.username,
       email: data.email,
       role: 'child',
       active: false,
+      password: passwordHash,
       child: {
         name: data.name,
         age: data.age,
@@ -29,31 +76,13 @@ const create = async (data, idParent) => {
       },
     };
 
-    let newPassword = await hash(moment().unix().toString(), 0)
-      .then(hashResult => hashResult)
-      .catch(error => {
-        throw new CustomError(500, -1, error.message);
-      });
-
-    newPassword = newPassword.substring(0, 8);
-
-    childData.password = await hash(newPassword, 0)
-      .then(hashResult => hashResult)
-      .catch(error => {
-        throw new CustomError(500, -1, error.message);
-      });
-
     const child = new User(childData);
 
-    const result = await child.save()
+    await child.save()
       .then(saved => saved)
       .catch(error => {
         let code = -1;
         let status = 500;
-        if (error.keyValue.username) {
-          code = -2;
-          status = 200;
-        }
         if (error.keyValue.email) {
           code = -3;
           status = 200;
@@ -61,22 +90,7 @@ const create = async (data, idParent) => {
         throw new CustomError(status, code, error.message);
       });
 
-    const activateToken = createActivateToken(result);
-
-    const message = newChildTemplate
-      .replace('{{user}}', childData.username)
-      .replace('{{password}}', newPassword)
-      .replace('{{name}}', childData.child.name)
-      .replace('{{url}}', `${emails.activate.link}/${activateToken}`);
-    const { html } = mjml2html(message);
-
-    const request = {
-      subject: emails.activate.subject,
-      emailTo: childData.email,
-      message: html,
-    };
-
-    await sendMail(request);
+    const activateToken = await sendActivationEmail(childData, password);
 
     return defaultResult(200, { activateToken });
   } catch (error) {
@@ -146,7 +160,6 @@ const update = async (id, data, idParent) => {
     };
 
     const childData = {
-      username: data.username,
       email: data.email,
       active: true,
       child: {
@@ -163,10 +176,6 @@ const update = async (id, data, idParent) => {
       .catch(error => {
         let code = -1;
         let status = 500;
-        if (error.keyValue.username) {
-          code = -2;
-          status = 200;
-        }
         if (error.keyValue.email) {
           code = -3;
           status = 200;
@@ -215,10 +224,47 @@ const remove = async (id, idParent) => {
   }
 };
 
+const resend = async (id, idParent) => {
+  try {
+    const search = {
+      _id: id,
+      'child.parent._id': idParent,
+      active: false,
+    };
+
+    const { password, passwordHash } = await createPassword();
+
+    const childData = {
+      password: passwordHash,
+    };
+
+    const result = await User.findOneAndUpdate(search, childData, { new: true })
+      .then(saved => saved)
+      .catch(error => {
+        throw new CustomError(500, -1, error.message);
+      });
+
+    if (!result) {
+      throw new CustomError(500, -2, 'Record not found');
+    }
+
+    const activateToken = await sendActivationEmail(result, password);
+
+    return defaultResult(200, { activateToken });
+  } catch (error) {
+    return defaultError(
+      error.status ? error.status : 500,
+      error.code ? error.code : -1,
+      error.message,
+    );
+  }
+};
+
 module.exports = {
   create,
   edit,
   list,
   update,
   remove,
+  resend,
 };
