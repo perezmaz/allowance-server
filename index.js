@@ -4,7 +4,7 @@ const server = require('./server');
 const { api, db } = require('./config');
 
 mongoose.connect(
-  `mongodb://${db.HOST}:${db.PORT}/${db.DATABASE}`,
+  `mongodb+srv://${db.USER}:${db.PASSWORD}@${db.HOST}/${db.DATABASE}?retryWrites=true&w=majority`,
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -15,7 +15,7 @@ mongoose.connect(
     if (error) {
       throw error;
     }
-    console.log(`Conected to mongo ${db.HOST}:${db.PORT}/${db.DATABASE}`);
+    console.log(`Conected to mongo ${db.HOST}/${db.DATABASE}`);
   },
 );
 

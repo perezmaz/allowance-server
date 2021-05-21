@@ -12,6 +12,8 @@ const config = {
     HOST: env.DB_HOST,
     PORT: env.DB_PORT,
     DATABASE: env.DATABASE,
+    USER: env.DB_USER,
+    PASSWORD: env.DB_PASSWORD,
   },
   jwtToken: {
     SECRET_KEY: env.SECRET_KEY,
