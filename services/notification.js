@@ -2,7 +2,7 @@ const axios = require('axios');
 const { notificationService } = require('../config');
 
 const notificationApi = axios.create({
-  baseURL: `${notificationService.HOST}:${notificationService.PORT}/api/${notificationService.VERSION}`,
+  baseURL: `${notificationService.HOST}/api/${notificationService.VERSION}`,
   timeout: 60000,
 });
 
